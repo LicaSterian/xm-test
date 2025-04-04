@@ -6,6 +6,6 @@ type LoginInput struct {
 }
 
 type LoginOutput struct {
-	ErrorCode int    `json:"errorCode"`
+	ErrorCode int    `json:"error_code"`
 	Token     string `json:"token"`
 }

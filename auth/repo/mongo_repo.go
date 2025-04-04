@@ -38,3 +38,8 @@ func (repo *mongoRepo) GetHashedPasswordByUsername(ctx context.Context, username
 	}
 	return user.HashedPassword, nil
 }
+
+func (repo *mongoRepo) InsertUser(ctx context.Context, user models.User) error {
+	_, err := repo.client.Database(DatabaseName).Collection(UsersCollection).InsertOne(ctx, user)
+	return err
+}

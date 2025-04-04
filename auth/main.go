@@ -52,15 +52,17 @@ func main() {
 	hasher := hasher.NewHasher()
 
 	authenticatorService := service.NewAuthenticator(repo, hasher)
+	registratorService := service.NewRegistrator(repo, hasher)
 	jwtGenerator := jwt.NewJWTGenerator([]byte(jwtSecretKey), time.Hour)
 
-	authHandler := handlers.NewAuthHandler(authenticatorService, jwtGenerator)
+	authHandler := handlers.NewAuthHandler(authenticatorService, registratorService, jwtGenerator)
 
 	// setup gin engine
 	gin.SetMode(gin.ReleaseMode)
 
 	engine := gin.New()
 	engine.POST("/login", authHandler.Login)
+	engine.POST("register", authHandler.Register)
 
 	// graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
