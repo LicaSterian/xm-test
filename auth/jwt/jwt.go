@@ -9,7 +9,7 @@ import (
 
 // JWTGenerator public interface
 type JWTGenerator interface {
-	Generate(username string) (string, error)
+	Generate(username string, scopes []string) (string, error)
 }
 
 // jwtGenerator private struct that implements the JWTGenerator methods
@@ -25,12 +25,13 @@ func NewJWTGenerator(key []byte, ttl time.Duration) JWTGenerator {
 	}
 }
 
-func (generator *jwtGenerator) Generate(username string) (string, error) {
+func (generator *jwtGenerator) Generate(username string, scopes []string) (string, error) {
 	now := time.Now().UTC()
 	expirationTime := now.Add(generator.ttl)
 
 	claims := &models.JWTClaims{
 		Username: username,
+		Scopes:   scopes,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 			IssuedAt:  jwt.NewNumericDate(now),

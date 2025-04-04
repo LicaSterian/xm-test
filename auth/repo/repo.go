@@ -6,6 +6,6 @@ import (
 )
 
 type Repo interface {
-	GetHashedPasswordByUsername(ctx context.Context, username string) (string, error)
+	GetUser(ctx context.Context, username string) (models.User, error)
 	InsertUser(ctx context.Context, user models.User) error
 }

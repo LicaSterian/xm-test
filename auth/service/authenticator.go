@@ -7,7 +7,7 @@ import (
 )
 
 type Authenticator interface {
-	Authenticate(ctx context.Context, username, password string) bool
+	Authenticate(ctx context.Context, username, password string) (scopes []string, success bool)
 }
 
 type authenticator struct {
@@ -22,10 +22,14 @@ func NewAuthenticator(repo repo.Repo, hasher hasher.Hash) Authenticator {
 	}
 }
 
-func (authenticatorService *authenticator) Authenticate(ctx context.Context, username, password string) bool {
-	hashedPassword, err := authenticatorService.repo.GetHashedPasswordByUsername(ctx, username)
+func (authenticatorService *authenticator) Authenticate(ctx context.Context, username, password string) ([]string, bool) {
+	user, err := authenticatorService.repo.GetUser(ctx, username)
 	if err != nil {
-		return false
+		return []string{}, false
 	}
-	return authenticatorService.hasher.ComparePassword(hashedPassword, password)
+	passwordHashMatch := authenticatorService.hasher.ComparePassword(user.HashedPassword, password)
+	if !passwordHashMatch {
+		return []string{}, false
+	}
+	return user.Scopes, true
 }

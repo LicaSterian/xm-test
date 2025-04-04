@@ -23,20 +23,22 @@ func NewMongoRepo(client *mongo.Client) Repo {
 	}
 }
 
-func (repo *mongoRepo) GetHashedPasswordByUsername(ctx context.Context, username string) (string, error) {
+func (repo *mongoRepo) GetUser(ctx context.Context, username string) (models.User, error) {
 	filter := bson.M{
 		"username": username,
 	}
+	user := models.User{}
 	result := repo.client.Database(DatabaseName).Collection(UsersCollection).FindOne(ctx, filter)
 	if err := result.Err(); err != nil {
-		return "", err
+		return user, err
 	}
-	var user models.User
+
 	err := result.Decode(&user)
 	if err != nil {
-		return "", err
+		return user, err
 	}
-	return user.HashedPassword, nil
+
+	return user, nil
 }
 
 func (repo *mongoRepo) InsertUser(ctx context.Context, user models.User) error {

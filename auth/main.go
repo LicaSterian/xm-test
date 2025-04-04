@@ -87,4 +87,5 @@ func main() {
 	if err != nil {
 		log.Panic("error while disconnecting from mongodb", err.Error())
 	}
+	log.Println("Disconnected from MongoDB")
 }

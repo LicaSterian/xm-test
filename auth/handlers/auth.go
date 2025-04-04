@@ -62,13 +62,14 @@ func (handler *authHandler) Login(c *gin.Context) {
 		return
 	}
 
-	if !handler.authenticatorService.Authenticate(ctx, input.Username, input.Password) {
+	scopes, authenticated := handler.authenticatorService.Authenticate(ctx, input.Username, input.Password)
+	if !authenticated {
 		output.ErrorCode = errorCodes[errKeyAuthFailed]
 		c.JSON(http.StatusUnauthorized, output)
 		return
 	}
 
-	token, err := handler.jwtGenerator.Generate(input.Username)
+	token, err := handler.jwtGenerator.Generate(input.Username, scopes)
 	if err != nil {
 		output.ErrorCode = errorCodes[errKeyCouldNotCreateToken]
 		c.JSON(http.StatusInternalServerError, output)
