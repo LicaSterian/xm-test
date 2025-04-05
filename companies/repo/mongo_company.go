@@ -22,6 +22,9 @@ var (
 	ErrFindOneDecode          = errors.New("findOne returned an error while decode ")
 	ErrFindOneAndUpdate       = errors.New("findOneAndUpdate returned an error")
 	ErrFindOneAndUpdateDecode = errors.New("findOneAndUpdate returned an error while decoding")
+	ErrDeleteOne              = errors.New("deleteOne returned an error")
+	ErrDocumentNotFound       = errors.New("document not found")
+	ErrDeleteOneNotOne        = errors.New("deleteOne result returned a count different than one")
 )
 
 type mongoCompanyRepo struct {
@@ -89,5 +92,21 @@ func (r *mongoCompanyRepo) GetCompany(ctx context.Context, companyId uuid.UUID) 
 }
 
 func (r *mongoCompanyRepo) DeleteCompany(ctx context.Context, companyId uuid.UUID) error {
+	filter := bson.M{
+		"_id": companyId,
+	}
+	result, err := r.client.
+		Database(DatabaseName).
+		Collection(CompaniesCollection).
+		DeleteOne(ctx, filter)
+	if err != nil {
+		return errors.Join(ErrDeleteOne, err)
+	}
+	if result.DeletedCount == 0 {
+		return ErrDocumentNotFound
+	}
+	if result.DeletedCount != 1 {
+		return ErrDeleteOneNotOne
+	}
 	return nil
 }

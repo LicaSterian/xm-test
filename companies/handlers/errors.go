@@ -8,6 +8,7 @@ const (
 	errMessageInvalidId             string = "invalid id"
 	errMessageGetCompany            string = "error while getting company"
 	errMessagePatchCompany          string = "error while patching company"
+	errMessageDeleteCompany         string = "error while deleting company"
 )
 
 var (
@@ -16,6 +17,7 @@ var (
 	ErrInvalidId             = errors.New(errMessageInvalidId)
 	ErrGetCompany            = errors.New(errMessageGetCompany)
 	ErrPatchCompany          = errors.New(errMessagePatchCompany)
+	ErrDeleteCompany         = errors.New(errMessageDeleteCompany)
 )
 
 const (
@@ -24,4 +26,5 @@ const (
 	ErrCodeInvalidId             int = 3
 	ErrCodeGetCompany            int = 4
 	ErrCodePatchCompany          int = 5
+	ErrCodeDeleteCompany         int = 6
 )

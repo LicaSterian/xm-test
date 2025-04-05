@@ -62,5 +62,5 @@ func (service *companyService) GetCompany(ctx context.Context, companyId uuid.UU
 }
 
 func (service *companyService) DeleteCompany(ctx context.Context, companyId uuid.UUID) error {
-	return nil
+	return service.repo.DeleteCompany(ctx, companyId)
 }
