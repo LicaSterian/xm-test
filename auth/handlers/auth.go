@@ -9,6 +9,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
+)
+
+const (
+	statusCodeLogKey = "status_code"
+	errorCodeLogKey  = "error_code"
 )
 
 type AuthHandler interface {
@@ -43,6 +49,12 @@ func (handler *authHandler) Login(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		output.ErrorCode = ErrCodeInvalidInput
+		log.Error().
+			Err(ErrInvalidInput).
+			Int(errorCodeLogKey, output.ErrorCode).
+			Int(statusCodeLogKey, http.StatusBadRequest).
+			Msg("error while trying to bind JSON input")
+
 		c.JSON(http.StatusBadRequest, output)
 		return
 	}
@@ -50,18 +62,31 @@ func (handler *authHandler) Login(c *gin.Context) {
 	scopes, authenticated := handler.authenticatorService.Authenticate(ctx, input.Username, input.Password)
 	if !authenticated {
 		output.ErrorCode = ErrCodeAuthFailed
+		log.Error().
+			Err(ErrAuthFailed).
+			Int(errorCodeLogKey, output.ErrorCode).
+			Int(statusCodeLogKey, http.StatusUnauthorized).
+			Msg("error while trying to authenticate")
 		c.JSON(http.StatusUnauthorized, output)
 		return
 	}
 
 	token, err := handler.jwtGenerator.Generate(input.Username, scopes)
 	if err != nil {
-		output.ErrorCode = ErrCodeCouldNotCreateToken
+		output.ErrorCode = ErrCodeCouldNotGenerateToken
+		log.Error().
+			Err(ErrCouldNotGenerateToken).
+			Int(errorCodeLogKey, output.ErrorCode).
+			Int(statusCodeLogKey, http.StatusInternalServerError).
+			Msg("error while trying to generate token")
 		c.JSON(http.StatusInternalServerError, output)
 		return
 	}
 
 	output.Token = token
+	log.Info().
+		Int(statusCodeLogKey, http.StatusOK).
+		Msg("login successful")
 	c.JSON(http.StatusOK, output)
 }
 
@@ -74,6 +99,11 @@ func (handler *authHandler) Register(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		output.ErrorCode = ErrCodeInvalidInput
+		log.Error().
+			Err(ErrInvalidInput).
+			Int(errorCodeLogKey, output.ErrorCode).
+			Int(statusCodeLogKey, http.StatusBadRequest).
+			Msg("error while trying to bind JSON input")
 		c.JSON(http.StatusBadRequest, output)
 		return
 	}
@@ -81,9 +111,16 @@ func (handler *authHandler) Register(c *gin.Context) {
 	err = handler.registratorService.Register(ctx, input.Username, input.Password, input.Scopes)
 	if err != nil {
 		output.ErrorCode = ErrCodeRegistrationFailed
+		log.Error().
+			Err(ErrCouldNotGenerateToken).
+			Int(errorCodeLogKey, output.ErrorCode).
+			Int(statusCodeLogKey, http.StatusInternalServerError).
+			Msg("error while trying to register")
 		c.JSON(http.StatusInternalServerError, output)
 		return
 	}
-
+	log.Info().
+		Int(statusCodeLogKey, http.StatusOK).
+		Msg("register successful")
 	c.JSON(http.StatusOK, output)
 }

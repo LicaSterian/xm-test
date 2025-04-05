@@ -7,27 +7,37 @@ import (
 	"auth/repo"
 	"auth/service"
 	"context"
-	"fmt"
-	"log"
+	"errors"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
+
 	mongoURI := os.Getenv("MONGO_URI")
 	if mongoURI == "" {
-		log.Fatal("MONGO_URI env var not set")
+		err := errors.New("MONGO_URI env var not set")
+		log.Error().
+			Err(err).Msg("make sure to set the MONGO_URI env var")
+		return
 	}
 
 	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
 	if jwtSecretKey == "" {
-		log.Fatal("JWT_SECRET_KEY env var not set")
+		err := errors.New("JWT_SECRET_KEY env var not set")
+		log.Error().
+			Err(err).
+			Msg("make sure to set the JWT_SECRET_KEY env var")
+		return
 	}
 
 	// Set up a connection to MongoDB
@@ -37,16 +47,23 @@ func main() {
 
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
+		log.Error().
+			Err(err).
+			Msg("failed to connect to MongoDB")
+		return
 	}
 
 	// Check the connection
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		log.Fatalf("Failed to ping MongoDB: %v", err)
+		log.Error().
+			Err(err).
+			Msg("failed to ping MongoDB")
+		return
 	}
 
-	fmt.Println("Connected to MongoDB")
+	log.Info().
+		Msg("connected to MongoDB")
 
 	repo := repo.NewMongoRepo(client)
 	hasher := hasher.NewHasher()
@@ -70,9 +87,12 @@ func main() {
 
 	// Simulate some work
 	go func() {
-		err := engine.Run(":80")
+		port := "80"
+		err := engine.Run(":" + port)
 		if err != nil {
-			log.Panic("error running the server on port 80:", err.Error())
+			log.Error().
+				Err(err).
+				Msgf("error running the server on port %s", port)
 		}
 	}()
 
@@ -85,7 +105,11 @@ func main() {
 
 	err = client.Disconnect(disconnectCtx)
 	if err != nil {
-		log.Panic("error while disconnecting from mongodb", err.Error())
+		log.Error().
+			Err(err).
+			Msg("error while disconnecting from MongoDB")
 	}
-	log.Println("Disconnected from MongoDB")
+
+	log.Info().
+		Msg("successfully disconnected from MongoDB")
 }

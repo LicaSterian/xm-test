@@ -1,15 +1,24 @@
 package handlers
 
+import "errors"
+
 const (
-	errMessageInvalidInput        string = "invalid input"
-	errMessageAuthFailed          string = "authentication failed"
-	errMessageCouldNotCreateToken string = "could not create token"
-	errMessageRegistrationFailed  string = "registration failed"
+	errMessageInvalidInput          string = "invalid input"
+	errMessageAuthenticationFailed  string = "authentication failed"
+	errMessageCouldNotGenerateToken string = "could not generate token"
+	errMessageRegistrationFailed    string = "registration failed"
+)
+
+var (
+	ErrInvalidInput          = errors.New(errMessageInvalidInput)
+	ErrAuthFailed            = errors.New(errMessageAuthenticationFailed)
+	ErrCouldNotGenerateToken = errors.New(errMessageCouldNotGenerateToken)
+	ErrRegistrationGailed    = errors.New(errMessageRegistrationFailed)
 )
 
 const (
-	ErrCodeInvalidInput        int = 1
-	ErrCodeAuthFailed          int = 2
-	ErrCodeCouldNotCreateToken int = 3
-	ErrCodeRegistrationFailed  int = 4
+	ErrCodeInvalidInput          int = 1
+	ErrCodeAuthFailed            int = 2
+	ErrCodeCouldNotGenerateToken int = 3
+	ErrCodeRegistrationFailed    int = 4
 )
