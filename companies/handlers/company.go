@@ -89,10 +89,53 @@ func (handler *companyHandler) PatchCompany(c *gin.Context) {
 			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 			Int(consts.LogKeyErrorCode, errOutput.ErrorCode).
 			Int(consts.LogKeyStatusCode, http.StatusBadRequest).
+			Str(consts.LogKeyCompanyId, companyIdParam).
 			Msg("error while trying to parse companyId")
 		c.JSON(http.StatusBadRequest, errOutput)
 		return
 	}
+
+	var updateCompanyInput models.UpdateCompanyInput
+	err = c.ShouldBindJSON(&updateCompanyInput)
+	if err != nil {
+		errOutput := models.ErrorOutput{
+			ErrorCode: ErrCodeInvalidInput,
+		}
+		err = errors.Join(ErrInvalidInput, err)
+		log.Error().
+			Err(err).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+			Int(consts.LogKeyErrorCode, errOutput.ErrorCode).
+			Int(consts.LogKeyStatusCode, http.StatusBadRequest).
+			Str(consts.LogKeyCompanyId, companyId.String()).
+			Msg("error while trying to bind JSON input")
+		c.JSON(http.StatusBadRequest, errOutput)
+		return
+	}
+
+	companyOutput, err := handler.service.PatchCompany(ctx, companyId, updateCompanyInput)
+	if err != nil {
+		errOutput := models.ErrorOutput{
+			ErrorCode: ErrCodePatchCompany,
+		}
+		err = errors.Join(ErrPatchCompany, err)
+		log.Error().
+			Err(err).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+			Int(consts.LogKeyErrorCode, errOutput.ErrorCode).
+			Int(consts.LogKeyStatusCode, http.StatusBadRequest).
+			Str(consts.LogKeyCompanyId, companyId.String()).
+			Msg("error while trying to PATCH company")
+		c.JSON(http.StatusBadRequest, errOutput)
+		return
+	}
+
+	log.Info().
+		Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+		Int(consts.LogKeyStatusCode, http.StatusOK).
+		Str(consts.LogKeyCompanyId, companyId.String()).
+		Msg("patch company executed successfully")
+	c.JSON(http.StatusAccepted, companyOutput)
 }
 
 func (handler *companyHandler) GetCompany(c *gin.Context) {
@@ -110,6 +153,7 @@ func (handler *companyHandler) GetCompany(c *gin.Context) {
 			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 			Int(consts.LogKeyErrorCode, errOutput.ErrorCode).
 			Int(consts.LogKeyStatusCode, http.StatusBadRequest).
+			Str(consts.LogKeyCompanyId, companyIdParam).
 			Msg("error while trying to parse companyId")
 		c.JSON(http.StatusBadRequest, errOutput)
 		return
@@ -130,7 +174,7 @@ func (handler *companyHandler) GetCompany(c *gin.Context) {
 			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 			Int(consts.LogKeyErrorCode, errOutput.ErrorCode).
 			Int(consts.LogKeyStatusCode, statusCode).
-			Str("company_id", companyId.String()).
+			Str(consts.LogKeyCompanyId, companyId.String()).
 			Msg("error while trying to get company")
 		c.JSON(statusCode, errOutput)
 		return
@@ -139,7 +183,7 @@ func (handler *companyHandler) GetCompany(c *gin.Context) {
 	log.Info().
 		Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 		Int(consts.LogKeyStatusCode, http.StatusOK).
-		Str("company_id", companyId.String()).
+		Str(consts.LogKeyCompanyId, companyId.String()).
 		Msg("get company executed successfully")
 	c.JSON(http.StatusOK, companyOutput)
 }

@@ -1,6 +1,9 @@
 package models
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson"
+)
 
 // CompanyInput the struct from the JSON request body
 type CompanyInput struct {
@@ -55,9 +58,29 @@ func (company *Company) FromCompanyInput(input CompanyInput) {
 }
 
 type UpdateCompanyInput struct {
-	Name              string `json:"name" binding:"omitempty,max=15"` // must be unique
-	Description       string `json:"description" binding:"omitempty,max=3000"`
-	NumberOfEmployees int    `json:"number_of_employees" binding:"omitempty"`
-	Registered        bool   `json:"registered" binding:"omitempty"`
-	Type              string `json:"type" binding:"omitempty,oneof='Corporations' 'NonProfit' 'Cooperative' 'Sole Proprietorship'"`
+	Name              *string `json:"name" binding:"omitempty,max=15"` // must be unique
+	Description       *string `json:"description" binding:"omitempty,max=3000"`
+	NumberOfEmployees *int    `json:"number_of_employees" binding:"omitempty"`
+	Registered        *bool   `json:"registered" binding:"omitempty"`
+	Type              *string `json:"type" binding:"omitempty,oneof='Corporations' 'NonProfit' 'Cooperative' 'Sole Proprietorship'"`
+}
+
+func (updateCompanyInput UpdateCompanyInput) ToBsonM() bson.M {
+	output := bson.M{}
+	if updateCompanyInput.Name != nil {
+		output["name"] = updateCompanyInput.Name
+	}
+	if updateCompanyInput.Description != nil {
+		output["description"] = updateCompanyInput.Description
+	}
+	if updateCompanyInput.NumberOfEmployees != nil {
+		output["number_of_employees"] = updateCompanyInput.NumberOfEmployees
+	}
+	if updateCompanyInput.Registered != nil {
+		output["registered"] = updateCompanyInput.Registered
+	}
+	if updateCompanyInput.Type != nil {
+		output["type"] = updateCompanyInput.Type
+	}
+	return output
 }
