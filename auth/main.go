@@ -92,7 +92,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	// Simulate some work
+	// listen for requests on port 80
 	go func() {
 		port := "80"
 		err := engine.Run(":" + port)

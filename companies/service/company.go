@@ -46,7 +46,13 @@ func (service *companyService) PatchCompany(ctx context.Context, companyId uuid.
 }
 
 func (service *companyService) GetCompany(ctx context.Context, companyId uuid.UUID) (models.CompanyOutput, error) {
-	return models.CompanyOutput{}, nil
+	company, err := service.repo.GetCompany(ctx, companyId)
+	if err != nil {
+		return models.CompanyOutput{}, err
+	}
+	companyOutput := models.CompanyOutput{}
+	companyOutput.FromCompany(company)
+	return companyOutput, nil
 }
 
 func (service *companyService) DeleteCompany(ctx context.Context, companyId uuid.UUID) error {

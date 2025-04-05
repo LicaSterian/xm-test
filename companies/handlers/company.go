@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type CompanyHandler interface {
@@ -77,7 +79,52 @@ func (handler *companyHandler) PatchCompany(c *gin.Context) {
 }
 
 func (handler *companyHandler) GetCompany(c *gin.Context) {
+	ctx := c.Request.Context()
 
+	companyIdParam := c.Param("id")
+	companyId, err := uuid.Parse(companyIdParam)
+	if err != nil {
+		errOutput := models.ErrorOutput{
+			ErrorCode: ErrCodeInvalidId,
+		}
+		err = errors.Join(ErrInvalidInput, err)
+		log.Error().
+			Err(err).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+			Int(consts.LogKeyErrorCode, errOutput.ErrorCode).
+			Int(consts.LogKeyStatusCode, http.StatusBadRequest).
+			Msg("error while trying to parse companyId")
+		c.JSON(http.StatusBadRequest, errOutput)
+		return
+	}
+
+	companyOutput, err := handler.service.GetCompany(ctx, companyId)
+	if err != nil {
+		errOutput := models.ErrorOutput{
+			ErrorCode: ErrCodeGetCompany,
+		}
+		err = errors.Join(ErrGetCompany, err)
+		statusCode := http.StatusInternalServerError
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			statusCode = http.StatusNotFound
+		}
+		log.Error().
+			Err(err).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+			Int(consts.LogKeyErrorCode, errOutput.ErrorCode).
+			Int(consts.LogKeyStatusCode, statusCode).
+			Str("company_id", companyId.String()).
+			Msg("error while trying to get company")
+		c.JSON(statusCode, errOutput)
+		return
+	}
+
+	log.Info().
+		Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+		Int(consts.LogKeyStatusCode, http.StatusOK).
+		Str("company_id", companyId.String()).
+		Msg("get company executed successfully")
+	c.JSON(http.StatusOK, companyOutput)
 }
 
 func (handler *companyHandler) DeleteCompany(c *gin.Context) {
