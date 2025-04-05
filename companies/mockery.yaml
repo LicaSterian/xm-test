@@ -1,0 +1,26 @@
+# mockery.yaml
+
+# Directory to output generated mocks
+output: mocks
+
+# If true, will keep existing files instead of overwriting them
+keep_tree: true
+
+# Add `mock_` prefix to generated file names
+filename: mock_{{ interface }}.go
+
+# Output package name (e.g., "mocks")
+outpkg: mocks
+
+# Use Go module-friendly import paths
+# Required for monorepos or complex packages
+with-imports: true
+
+# Generate interface mocks from all packages in module
+all: true
+
+# Recursively look for interfaces
+recursive: true
+
+# Print verbose logs during generation
+loglevel: warn
