@@ -86,7 +86,7 @@ func TestCreateCompany(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			r := new(mocks.CompanyRepo)
 
-			companyService := NewCompanyService(r)
+			companyService := NewCompanyService(r, nil)
 
 			testCase.stubMock(r, testCase.company)
 
@@ -178,7 +178,7 @@ func TestPatchCompany(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			r := new(mocks.CompanyRepo)
 
-			companyService := NewCompanyService(r)
+			companyService := NewCompanyService(r, nil)
 
 			testCase.stubMock(r, testCase.company)
 
@@ -255,7 +255,7 @@ func TestGetCompany(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			r := new(mocks.CompanyRepo)
 
-			companyService := NewCompanyService(r)
+			companyService := NewCompanyService(r, nil)
 
 			testCase.stubMock(r, testCase.company)
 
@@ -303,7 +303,7 @@ func TestDeleteCompany(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			r := new(mocks.CompanyRepo)
 
-			companyService := NewCompanyService(r)
+			companyService := NewCompanyService(r, nil)
 
 			testCase.stubMock(r)
 

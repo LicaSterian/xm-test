@@ -18,6 +18,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 func main() {
@@ -40,6 +42,16 @@ func main() {
 			Err(err).
 			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 			Msg("make sure to set the JWT_SECRET_KEY env var")
+		return
+	}
+
+	kafkaServers := os.Getenv("KAFKA_SERVERS")
+	if kafkaServers == "" {
+		err := errors.New("KAFKA_SERVERS env var not set. ex: KAFKA_SERVERS=localhost:9092,example.com:9092")
+		log.Error().
+			Err(err).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+			Msg("make sure to set the KAFKA_SERVERS env var")
 		return
 	}
 
@@ -71,10 +83,27 @@ func main() {
 		Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 		Msg("connected to MongoDB")
 
+	producer, err := kafka.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers": kafkaServers,
+		"client.id":         "companies-service",
+		"acks":              "all"})
+
+	if err != nil {
+		log.Error().
+			Err(err).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+			Msg("failed to create Kafka producer")
+		return
+	}
+
+	log.Info().
+		Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+		Msg("created Kafka producer")
+
 	// Setup the service
 
 	companyRepo := repo.NewMongoCompanyRepo(client)
-	companyService := service.NewCompanyService(companyRepo)
+	companyService := service.NewCompanyService(companyRepo, producer)
 	companyHandler := handlers.NewCompanyHandler(companyService)
 
 	// setup gin engine
@@ -125,4 +154,11 @@ func main() {
 	log.Info().
 		Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 		Msg("successfully disconnected from MongoDB")
+
+	// close kafka connection
+	producer.Close()
+
+	log.Info().
+		Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+		Msg("closed the Kafka producer")
 }
