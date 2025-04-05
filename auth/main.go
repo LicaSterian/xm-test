@@ -1,6 +1,7 @@
 package main
 
 import (
+	"auth/consts"
 	"auth/handlers"
 	"auth/hasher"
 	"auth/jwt"
@@ -27,7 +28,9 @@ func main() {
 	if mongoURI == "" {
 		err := errors.New("MONGO_URI env var not set")
 		log.Error().
-			Err(err).Msg("make sure to set the MONGO_URI env var")
+			Err(err).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+			Msg("make sure to set the MONGO_URI env var")
 		return
 	}
 
@@ -36,6 +39,7 @@ func main() {
 		err := errors.New("JWT_SECRET_KEY env var not set")
 		log.Error().
 			Err(err).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 			Msg("make sure to set the JWT_SECRET_KEY env var")
 		return
 	}
@@ -49,6 +53,7 @@ func main() {
 	if err != nil {
 		log.Error().
 			Err(err).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 			Msg("failed to connect to MongoDB")
 		return
 	}
@@ -58,11 +63,13 @@ func main() {
 	if err != nil {
 		log.Error().
 			Err(err).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 			Msg("failed to ping MongoDB")
 		return
 	}
 
 	log.Info().
+		Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 		Msg("connected to MongoDB")
 
 	repo := repo.NewMongoRepo(client)
@@ -92,6 +99,7 @@ func main() {
 		if err != nil {
 			log.Error().
 				Err(err).
+				Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 				Msgf("error running the server on port %s", port)
 		}
 	}()
@@ -107,9 +115,11 @@ func main() {
 	if err != nil {
 		log.Error().
 			Err(err).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 			Msg("error while disconnecting from MongoDB")
 	}
 
 	log.Info().
+		Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 		Msg("successfully disconnected from MongoDB")
 }

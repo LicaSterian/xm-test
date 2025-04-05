@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"auth/consts"
 	"auth/jwt"
 	"auth/models"
 	"auth/service"
@@ -11,11 +12,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-)
-
-const (
-	statusCodeLogKey = "status_code"
-	errorCodeLogKey  = "error_code"
 )
 
 type AuthHandler interface {
@@ -53,8 +49,9 @@ func (handler *authHandler) Login(c *gin.Context) {
 		output.ErrorCode = ErrCodeInvalidInput
 		log.Error().
 			Err(err).
-			Int(errorCodeLogKey, output.ErrorCode).
-			Int(statusCodeLogKey, http.StatusBadRequest).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+			Int(consts.LogKeyErrorCode, output.ErrorCode).
+			Int(consts.LogKeyStatusCode, http.StatusBadRequest).
 			Msg("error while trying to bind JSON input")
 
 		c.JSON(http.StatusBadRequest, output)
@@ -66,8 +63,9 @@ func (handler *authHandler) Login(c *gin.Context) {
 		output.ErrorCode = ErrCodeAuthFailed
 		log.Error().
 			Err(ErrAuthFailed).
-			Int(errorCodeLogKey, output.ErrorCode).
-			Int(statusCodeLogKey, http.StatusUnauthorized).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+			Int(consts.LogKeyErrorCode, output.ErrorCode).
+			Int(consts.LogKeyStatusCode, http.StatusUnauthorized).
 			Msg("error while trying to authenticate")
 		c.JSON(http.StatusUnauthorized, output)
 		return
@@ -79,8 +77,9 @@ func (handler *authHandler) Login(c *gin.Context) {
 		output.ErrorCode = ErrCodeCouldNotGenerateToken
 		log.Error().
 			Err(err).
-			Int(errorCodeLogKey, output.ErrorCode).
-			Int(statusCodeLogKey, http.StatusInternalServerError).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+			Int(consts.LogKeyErrorCode, output.ErrorCode).
+			Int(consts.LogKeyStatusCode, http.StatusInternalServerError).
 			Msg("error while trying to generate token")
 		c.JSON(http.StatusInternalServerError, output)
 		return
@@ -88,7 +87,8 @@ func (handler *authHandler) Login(c *gin.Context) {
 
 	output.Token = token
 	log.Info().
-		Int(statusCodeLogKey, http.StatusOK).
+		Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+		Int(consts.LogKeyStatusCode, http.StatusOK).
 		Msg("login successful")
 	c.JSON(http.StatusOK, output)
 }
@@ -105,8 +105,9 @@ func (handler *authHandler) Register(c *gin.Context) {
 		output.ErrorCode = ErrCodeInvalidInput
 		log.Error().
 			Err(err).
-			Int(errorCodeLogKey, output.ErrorCode).
-			Int(statusCodeLogKey, http.StatusBadRequest).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+			Int(consts.LogKeyErrorCode, output.ErrorCode).
+			Int(consts.LogKeyStatusCode, http.StatusBadRequest).
 			Msg("error while trying to bind JSON input")
 		c.JSON(http.StatusBadRequest, output)
 		return
@@ -118,14 +119,16 @@ func (handler *authHandler) Register(c *gin.Context) {
 		output.ErrorCode = ErrCodeRegistrationFailed
 		log.Error().
 			Err(err).
-			Int(errorCodeLogKey, output.ErrorCode).
-			Int(statusCodeLogKey, http.StatusInternalServerError).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+			Int(consts.LogKeyErrorCode, output.ErrorCode).
+			Int(consts.LogKeyStatusCode, http.StatusInternalServerError).
 			Msg("error while trying to register")
 		c.JSON(http.StatusInternalServerError, output)
 		return
 	}
 	log.Info().
-		Int(statusCodeLogKey, http.StatusOK).
+		Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+		Int(consts.LogKeyStatusCode, http.StatusOK).
 		Msg("register successful")
 	c.JSON(http.StatusOK, output)
 }
