@@ -5,27 +5,11 @@ import (
 	"auth/models"
 	"auth/service"
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
-
-const errKeyInvalidInput = "invalid input"
-const errKeyAuthFailed = "authentication failed"
-const errKeyCouldNotCreateToken = "could not create token"
-const errKeyRegistrationFailed = "registration failed"
-
-var ErrInvalidInput = errors.New(errKeyInvalidInput)
-var ErrAuthFailed = errors.New(errKeyAuthFailed)
-var ErrCouldNotCreateToken = errors.New(errKeyCouldNotCreateToken)
-
-var errorCodes = map[string]int{
-	errKeyInvalidInput:        1,
-	errKeyAuthFailed:          2,
-	errKeyCouldNotCreateToken: 3,
-}
 
 type AuthHandler interface {
 	Login(c *gin.Context)
@@ -56,22 +40,23 @@ func (handler *authHandler) Login(c *gin.Context) {
 
 	var input models.LoginInput
 	output := models.LoginOutput{}
-	if err := c.ShouldBindJSON(&input); err != nil {
-		output.ErrorCode = errorCodes[errKeyInvalidInput]
+	err := c.ShouldBindJSON(&input)
+	if err != nil {
+		output.ErrorCode = ErrCodeInvalidInput
 		c.JSON(http.StatusBadRequest, output)
 		return
 	}
 
 	scopes, authenticated := handler.authenticatorService.Authenticate(ctx, input.Username, input.Password)
 	if !authenticated {
-		output.ErrorCode = errorCodes[errKeyAuthFailed]
+		output.ErrorCode = ErrCodeAuthFailed
 		c.JSON(http.StatusUnauthorized, output)
 		return
 	}
 
 	token, err := handler.jwtGenerator.Generate(input.Username, scopes)
 	if err != nil {
-		output.ErrorCode = errorCodes[errKeyCouldNotCreateToken]
+		output.ErrorCode = ErrCodeCouldNotCreateToken
 		c.JSON(http.StatusInternalServerError, output)
 		return
 	}
@@ -86,15 +71,16 @@ func (handler *authHandler) Register(c *gin.Context) {
 
 	var input models.RegisterInput
 	output := models.RegisterOutput{}
-	if err := c.ShouldBindJSON(&input); err != nil {
-		output.ErrorCode = errorCodes[errKeyInvalidInput]
+	err := c.ShouldBindJSON(&input)
+	if err != nil {
+		output.ErrorCode = ErrCodeInvalidInput
 		c.JSON(http.StatusBadRequest, output)
 		return
 	}
 
-	err := handler.registratorService.Register(ctx, input.Username, input.Password, input.Scopes)
+	err = handler.registratorService.Register(ctx, input.Username, input.Password, input.Scopes)
 	if err != nil {
-		output.ErrorCode = errorCodes[errKeyRegistrationFailed]
+		output.ErrorCode = ErrCodeRegistrationFailed
 		c.JSON(http.StatusInternalServerError, output)
 		return
 	}

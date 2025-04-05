@@ -5,7 +5,11 @@ import (
 	"auth/models"
 	"auth/repo"
 	"context"
+	"errors"
 )
+
+var ErrHashingPassword = errors.New("error hashing password")
+var ErrInsertingUser = errors.New("error inserting user in the database")
 
 type Registrator interface {
 	Register(ctx context.Context, username string, password string, scopes []string) error
@@ -31,7 +35,7 @@ func (registratorService *registrator) Register(
 ) error {
 	hashedPassword, err := registratorService.hasher.HashPassword(password)
 	if err != nil {
-		return err
+		return errors.Join(ErrHashingPassword, err)
 	}
 
 	user := models.User{
@@ -41,5 +45,8 @@ func (registratorService *registrator) Register(
 	}
 
 	err = registratorService.repo.InsertUser(ctx, user)
-	return err
+	if err != nil {
+		return errors.Join(ErrInsertingUser, err)
+	}
+	return nil
 }
