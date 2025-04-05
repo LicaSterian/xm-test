@@ -75,7 +75,24 @@ func (handler *companyHandler) CreateCompany(c *gin.Context) {
 }
 
 func (handler *companyHandler) PatchCompany(c *gin.Context) {
+	ctx := c.Request.Context()
 
+	companyIdParam := c.Param("id")
+	companyId, err := uuid.Parse(companyIdParam)
+	if err != nil {
+		errOutput := models.ErrorOutput{
+			ErrorCode: ErrCodeInvalidId,
+		}
+		err = errors.Join(ErrInvalidInput, err)
+		log.Error().
+			Err(err).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+			Int(consts.LogKeyErrorCode, errOutput.ErrorCode).
+			Int(consts.LogKeyStatusCode, http.StatusBadRequest).
+			Msg("error while trying to parse companyId")
+		c.JSON(http.StatusBadRequest, errOutput)
+		return
+	}
 }
 
 func (handler *companyHandler) GetCompany(c *gin.Context) {
@@ -87,7 +104,7 @@ func (handler *companyHandler) GetCompany(c *gin.Context) {
 		errOutput := models.ErrorOutput{
 			ErrorCode: ErrCodeInvalidId,
 		}
-		err = errors.Join(ErrInvalidInput, err)
+		err = errors.Join(ErrInvalidId, err)
 		log.Error().
 			Err(err).
 			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
