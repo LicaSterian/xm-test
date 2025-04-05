@@ -119,20 +119,24 @@ func (handler *companyHandler) PatchCompany(c *gin.Context) {
 			ErrorCode: ErrCodePatchCompany,
 		}
 		err = errors.Join(ErrPatchCompany, err)
+		errorCode := http.StatusInternalServerError
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			errorCode = http.StatusNotFound
+		}
 		log.Error().
 			Err(err).
 			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 			Int(consts.LogKeyErrorCode, errOutput.ErrorCode).
-			Int(consts.LogKeyStatusCode, http.StatusBadRequest).
+			Int(consts.LogKeyStatusCode, errorCode).
 			Str(consts.LogKeyCompanyId, companyId.String()).
 			Msg("error while trying to PATCH company")
-		c.JSON(http.StatusBadRequest, errOutput)
+		c.JSON(errorCode, errOutput)
 		return
 	}
 
 	log.Info().
 		Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
-		Int(consts.LogKeyStatusCode, http.StatusOK).
+		Int(consts.LogKeyStatusCode, http.StatusAccepted).
 		Str(consts.LogKeyCompanyId, companyId.String()).
 		Msg("patch company executed successfully")
 	c.JSON(http.StatusAccepted, companyOutput)
