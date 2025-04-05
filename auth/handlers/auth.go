@@ -5,6 +5,7 @@ import (
 	"auth/models"
 	"auth/service"
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -48,9 +49,10 @@ func (handler *authHandler) Login(c *gin.Context) {
 	output := models.LoginOutput{}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
+		err = errors.Join(ErrInvalidInput, err)
 		output.ErrorCode = ErrCodeInvalidInput
 		log.Error().
-			Err(ErrInvalidInput).
+			Err(err).
 			Int(errorCodeLogKey, output.ErrorCode).
 			Int(statusCodeLogKey, http.StatusBadRequest).
 			Msg("error while trying to bind JSON input")
@@ -73,9 +75,10 @@ func (handler *authHandler) Login(c *gin.Context) {
 
 	token, err := handler.jwtGenerator.Generate(input.Username, scopes)
 	if err != nil {
+		err = errors.Join(ErrCouldNotGenerateToken, err)
 		output.ErrorCode = ErrCodeCouldNotGenerateToken
 		log.Error().
-			Err(ErrCouldNotGenerateToken).
+			Err(err).
 			Int(errorCodeLogKey, output.ErrorCode).
 			Int(statusCodeLogKey, http.StatusInternalServerError).
 			Msg("error while trying to generate token")
@@ -98,9 +101,10 @@ func (handler *authHandler) Register(c *gin.Context) {
 	output := models.RegisterOutput{}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
+		err = errors.Join(ErrInvalidInput, err)
 		output.ErrorCode = ErrCodeInvalidInput
 		log.Error().
-			Err(ErrInvalidInput).
+			Err(err).
 			Int(errorCodeLogKey, output.ErrorCode).
 			Int(statusCodeLogKey, http.StatusBadRequest).
 			Msg("error while trying to bind JSON input")
@@ -110,9 +114,10 @@ func (handler *authHandler) Register(c *gin.Context) {
 
 	err = handler.registratorService.Register(ctx, input.Username, input.Password, input.Scopes)
 	if err != nil {
+		err = errors.Join(ErrRegistrationFailed, err)
 		output.ErrorCode = ErrCodeRegistrationFailed
 		log.Error().
-			Err(ErrCouldNotGenerateToken).
+			Err(err).
 			Int(errorCodeLogKey, output.ErrorCode).
 			Int(statusCodeLogKey, http.StatusInternalServerError).
 			Msg("error while trying to register")

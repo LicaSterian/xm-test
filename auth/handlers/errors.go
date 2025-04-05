@@ -13,7 +13,7 @@ var (
 	ErrInvalidInput          = errors.New(errMessageInvalidInput)
 	ErrAuthFailed            = errors.New(errMessageAuthenticationFailed)
 	ErrCouldNotGenerateToken = errors.New(errMessageCouldNotGenerateToken)
-	ErrRegistrationGailed    = errors.New(errMessageRegistrationFailed)
+	ErrRegistrationFailed    = errors.New(errMessageRegistrationFailed)
 )
 
 const (
