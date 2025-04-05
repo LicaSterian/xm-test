@@ -55,7 +55,7 @@ func (handler *companyHandler) CreateCompany(c *gin.Context) {
 	companyOutput, err := handler.service.CreateCompany(ctx, companyInput)
 	if err != nil {
 		errOutput := models.ErrorOutput{
-			ErrorCode: ErrCodeInvalidInput,
+			ErrorCode: ErrCodeCouldNotCreateCompany,
 		}
 		err = errors.Join(ErrCouldNotCreateCompany, err)
 		log.Error().
@@ -84,7 +84,7 @@ func (handler *companyHandler) PatchCompany(c *gin.Context) {
 		errOutput := models.ErrorOutput{
 			ErrorCode: ErrCodeInvalidId,
 		}
-		err = errors.Join(ErrInvalidInput, err)
+		err = errors.Join(ErrInvalidId, err)
 		log.Error().
 			Err(err).
 			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
