@@ -115,6 +115,10 @@ func main() {
 	engine.Use(gin.Recovery())
 	engine.Use(middleware.TimeoutMiddleware(5 * time.Second))
 
+	// rate limit 5 req/s with burst of 10
+	limiter := middleware.NewClientLimiter(5, 10)
+	engine.Use(middleware.RateLimitMiddleware(limiter))
+
 	v1Group := engine.Group("/v1", middleware.ValidateJWTToken([]byte(jwtSecretKey)))
 
 	v1Group.POST("/company", companyHandler.CreateCompany)
