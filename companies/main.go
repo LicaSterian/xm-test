@@ -1,12 +1,12 @@
 package main
 
 import (
-	"auth/consts"
-	"auth/handlers"
-	"auth/hasher"
-	"auth/jwt"
-	"auth/repo"
-	"auth/service"
+	"companies/consts"
+	"companies/eventpublisher"
+	"companies/handlers"
+	"companies/middleware"
+	"companies/repo"
+	"companies/service"
 	"context"
 	"errors"
 	"os"
@@ -19,6 +19,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 func main() {
@@ -41,6 +43,16 @@ func main() {
 			Err(err).
 			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 			Msg("make sure to set the JWT_SECRET_KEY env var")
+		return
+	}
+
+	kafkaServers := os.Getenv("KAFKA_SERVERS")
+	if kafkaServers == "" {
+		err := errors.New("KAFKA_SERVERS env var not set. ex: KAFKA_SERVERS=localhost:9092,example.com:9092")
+		log.Error().
+			Err(err).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+			Msg("make sure to set the KAFKA_SERVERS env var")
 		return
 	}
 
@@ -72,29 +84,55 @@ func main() {
 		Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 		Msg("connected to MongoDB")
 
-	repo := repo.NewMongoRepo(client)
-	hasher := hasher.NewHasher()
+	producer, err := kafka.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers": kafkaServers,
+		"client.id":         "companies-service",
+		"acks":              "all"})
 
-	authenticatorService := service.NewAuthenticator(repo, hasher)
-	registratorService := service.NewRegistrator(repo, hasher)
-	jwtGenerator := jwt.NewJWTGenerator([]byte(jwtSecretKey), time.Hour)
+	if err != nil {
+		log.Error().
+			Err(err).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+			Msg("failed to create Kafka producer")
+		return
+	}
 
-	authHandler := handlers.NewAuthHandler(authenticatorService, registratorService, jwtGenerator)
+	log.Info().
+		Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+		Msg("created Kafka producer")
+
+	// Setup the service
+
+	companyRepo := repo.NewMongoCompanyRepo(client)
+	eventPublisher := eventpublisher.NewEventPublisher(producer)
+	companyService := service.NewCompanyService(companyRepo, eventPublisher)
+	companyHandler := handlers.NewCompanyHandler(companyService)
 
 	// setup gin engine
 	gin.SetMode(gin.ReleaseMode)
 
 	engine := gin.New()
-	engine.POST("/login", authHandler.Login)
-	engine.POST("register", authHandler.Register)
+	engine.Use(gin.Recovery())
+	engine.Use(middleware.TimeoutMiddleware(5 * time.Second))
+
+	// rate limit 5 req/s with burst of 10
+	limiter := middleware.NewClientLimiter(5, 10)
+	engine.Use(middleware.RateLimitMiddleware(limiter))
+
+	v1Group := engine.Group("/v1", middleware.ValidateJWTToken([]byte(jwtSecretKey)))
+
+	v1Group.POST("/company", companyHandler.CreateCompany)
+	v1Group.PATCH("/company/:id", companyHandler.PatchCompany)
+	v1Group.GET("/company/:id", companyHandler.GetCompany)
+	v1Group.DELETE("/company/:id", companyHandler.DeleteCompany)
 
 	// graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	// listen for requests on port 80
+	// run the service on port 8080
 	go func() {
-		port := "80"
+		port := "8080"
 		err := engine.Run(":" + port)
 		if err != nil {
 			log.Error().
@@ -122,4 +160,11 @@ func main() {
 	log.Info().
 		Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
 		Msg("successfully disconnected from MongoDB")
+
+	// close kafka connection
+	producer.Close()
+
+	log.Info().
+		Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+		Msg("closed the Kafka producer")
 }
