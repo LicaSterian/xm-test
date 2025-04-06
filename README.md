@@ -265,4 +265,4 @@ DELETE response 204 No Content
 ## TODOs
 
 - Swagger Documentation
-- Mongo Migrations
+- Make docker-compose work
