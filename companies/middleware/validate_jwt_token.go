@@ -9,6 +9,8 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
+const issuer = "auth"
+
 func ValidateJWTToken(jwtSecretKey []byte) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
@@ -25,6 +27,16 @@ func ValidateJWTToken(jwtSecretKey []byte) gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			return
+		}
+
+		iss, err := claims.GetIssuer()
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			return
+		}
+		if iss != issuer {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			return
 		}

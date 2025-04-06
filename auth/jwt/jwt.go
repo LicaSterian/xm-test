@@ -7,6 +7,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+const issuer = "auth"
+
 // JWTGenerator public interface
 type JWTGenerator interface {
 	Generate(username string, scopes []string) (string, error)
@@ -35,6 +37,7 @@ func (generator *jwtGenerator) Generate(username string, scopes []string) (strin
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 			IssuedAt:  jwt.NewNumericDate(now),
+			Issuer:    issuer,
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
