@@ -66,6 +66,68 @@ docker run -d \
   companies
 ```
 
+## Mongo Migrations
+
+We need to run the mongo-migrations Node.js program in order to create unique indexes on the users and companies collections.
+
+### Prerequisites
+
+Node.js installed
+
+On OSX
+
+```bash
+brew update
+brew install node
+```
+
+Test
+
+```bash
+node -v
+npm -v
+```
+
+### Configure
+
+We need a .env file in the mongo-migration folder that has the MONGODB_URI variable.
+We can copy the .env.example file for this
+
+```bash
+cd mongo-migration
+cp .env.example .env
+```
+
+We then need to set the MONGODB_URI variable
+
+```bash
+echo "mongodb://admin:password@localhost:27017" >> .env
+```
+
+We need to install the NPM dependencies
+
+```bash
+npm install
+```
+
+### Run the migrations
+
+```bash
+npm run start
+```
+
+Output
+
+```bash
+> mongo-migrations@1.0.0 start
+> node migration-runner.js
+
+Running migration 0001: Creating unique index on users.username
+Migration 0001-add-unique-index-to-users applied.
+Running migration 0002: Creating unique index on companies.name
+Migration 0002-add-unique-index-to-companies applied.
+```
+
 ## Auth service
 
 Create a new user by calling the /register endpoint
