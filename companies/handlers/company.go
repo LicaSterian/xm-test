@@ -5,6 +5,7 @@ import (
 	"companies/models"
 	"companies/repo"
 	"companies/service"
+	"companies/xss"
 	"errors"
 	"net/http"
 	"time"
@@ -48,6 +49,23 @@ func (handler *companyHandler) CreateCompany(c *gin.Context) {
 			Int(consts.LogKeyErrorCode, errOutput.ErrorCode).
 			Int(consts.LogKeyStatusCode, http.StatusBadRequest).
 			Msg("error while trying to bind JSON input")
+		c.JSON(http.StatusBadRequest, errOutput)
+		return
+	}
+
+	// Name field only has 15 chars, it is not long enough to contain XSS content
+	err = xss.CheckForXSS(companyInput.Description)
+	if err != nil {
+		errOutput := models.ErrorOutput{
+			ErrorCode: ErrCodeInvalidInput,
+		}
+		err = errors.Join(ErrInvalidInput, err)
+		log.Error().
+			Err(err).
+			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+			Int(consts.LogKeyErrorCode, errOutput.ErrorCode).
+			Int(consts.LogKeyStatusCode, http.StatusBadRequest).
+			Msg("error while checking for XSS content")
 		c.JSON(http.StatusBadRequest, errOutput)
 		return
 	}
@@ -112,6 +130,25 @@ func (handler *companyHandler) PatchCompany(c *gin.Context) {
 			Msg("error while trying to bind JSON input")
 		c.JSON(http.StatusBadRequest, errOutput)
 		return
+	}
+
+	// Name field only has 15 chars, it is not long enough to contain XSS content
+	if updateCompanyInput.Description != nil {
+		err = xss.CheckForXSS(*updateCompanyInput.Description)
+		if err != nil {
+			errOutput := models.ErrorOutput{
+				ErrorCode: ErrCodeInvalidInput,
+			}
+			err = errors.Join(ErrInvalidInput, err)
+			log.Error().
+				Err(err).
+				Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
+				Int(consts.LogKeyErrorCode, errOutput.ErrorCode).
+				Int(consts.LogKeyStatusCode, http.StatusBadRequest).
+				Msg("error while checking for XSS content")
+			c.JSON(http.StatusBadRequest, errOutput)
+			return
+		}
 	}
 
 	companyOutput, err := handler.service.PatchCompany(ctx, companyId, updateCompanyInput)

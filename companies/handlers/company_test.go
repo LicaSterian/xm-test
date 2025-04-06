@@ -79,6 +79,24 @@ func TestCreateCompany(t *testing.T) {
 		},
 		// TODO test case for each validation field
 		{
+			name: "xss content in description",
+			requestBody: `{
+				"name": "company-name",
+				"description": "<a onblur=\"alert('secret')\" href=\"http://www.google.com\">Google</a>",
+				"number_of_employees": 100,
+				"registered": true,
+				"type": "Corporations"
+			}`,
+			companyOutput:      models.CompanyOutput{},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedResponseBody: fmt.Sprintf(`{
+				"error_code": %d
+			}`, ErrCodeInvalidInput),
+			stubMocks: func(s *mocks.CompanyService, companyOutput models.CompanyOutput) {
+
+			},
+		},
+		{
 			name: "service returns an 500 error",
 			requestBody: `{
 				"name": "company-name",
@@ -192,6 +210,21 @@ func TestPatchCompany(t *testing.T) {
 			companyId: companyId.String(),
 			requestBody: `{
 				"name": "company-name-longer-than-15-chars"
+			}`,
+			companyOutput:      models.CompanyOutput{},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedResponseBody: fmt.Sprintf(`{
+				"error_code": %d
+			}`, ErrCodeInvalidInput),
+			stubMocks: func(s *mocks.CompanyService, companyOutput models.CompanyOutput) {
+
+			},
+		},
+		{
+			name:      "xss content in description",
+			companyId: companyId.String(),
+			requestBody: `{
+				"description": "<a onblur=\"alert('secret')\" href=\"http://www.google.com\">Google</a>"
 			}`,
 			companyOutput:      models.CompanyOutput{},
 			expectedStatusCode: http.StatusBadRequest,
