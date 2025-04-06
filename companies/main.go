@@ -2,6 +2,7 @@ package main
 
 import (
 	"companies/consts"
+	"companies/eventpublisher"
 	"companies/handlers"
 	"companies/middleware"
 	"companies/repo"
@@ -103,7 +104,8 @@ func main() {
 	// Setup the service
 
 	companyRepo := repo.NewMongoCompanyRepo(client)
-	companyService := service.NewCompanyService(companyRepo, producer)
+	eventPublisher := eventpublisher.NewEventPublisher(producer)
+	companyService := service.NewCompanyService(companyRepo, eventPublisher)
 	companyHandler := handlers.NewCompanyHandler(companyService)
 
 	// setup gin engine

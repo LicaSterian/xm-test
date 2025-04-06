@@ -1,19 +1,13 @@
 package service
 
 import (
-	"companies/consts"
+	"companies/eventpublisher"
 	"companies/models"
 	"companies/repo"
 	"context"
-	"encoding/json"
-	"time"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/google/uuid"
-	"github.com/rs/zerolog/log"
 )
-
-var CompaniesEventsKafkaTopic string = "companies-events"
 
 type CompanyService interface {
 	CreateCompany(ctx context.Context, companyInput models.CompanyInput) (models.CompanyOutput, error)
@@ -23,14 +17,14 @@ type CompanyService interface {
 }
 
 type companyService struct {
-	repo          repo.CompanyRepo
-	kafkaProducer *kafka.Producer
+	repo           repo.CompanyRepo
+	eventPublisher eventpublisher.EventPublisher
 }
 
-func NewCompanyService(repo repo.CompanyRepo, kafkaProducer *kafka.Producer) CompanyService {
+func NewCompanyService(repo repo.CompanyRepo, eventPublisher eventpublisher.EventPublisher) CompanyService {
 	return &companyService{
-		repo:          repo,
-		kafkaProducer: kafkaProducer,
+		repo:           repo,
+		eventPublisher: eventPublisher,
 	}
 }
 
@@ -53,7 +47,7 @@ func (service *companyService) CreateCompany(ctx context.Context, companyInput m
 		Data: output,
 	}
 
-	go service.publishEvent(event)
+	go service.eventPublisher.PublishEvent(event)
 
 	return output, nil
 }
@@ -71,7 +65,7 @@ func (service *companyService) PatchCompany(ctx context.Context, companyId uuid.
 		Data: output,
 	}
 
-	go service.publishEvent(event)
+	go service.eventPublisher.PublishEvent(event)
 
 	return output, nil
 }
@@ -89,7 +83,7 @@ func (service *companyService) GetCompany(ctx context.Context, companyId uuid.UU
 		Data: companyOutput,
 	}
 
-	go service.publishEvent(event)
+	go service.eventPublisher.PublishEvent(event)
 
 	return companyOutput, nil
 }
@@ -105,47 +99,7 @@ func (service *companyService) DeleteCompany(ctx context.Context, companyId uuid
 		Data: nil,
 	}
 
-	go service.publishEvent(event)
+	go service.eventPublisher.PublishEvent(event)
 
 	return nil
-}
-
-func (service *companyService) publishEvent(event models.KafkaEvent) {
-	if service.kafkaProducer == nil {
-		return
-	}
-
-	jsonEvent, err := json.Marshal(event)
-	if err != nil {
-		log.Error().
-			Err(err).
-			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
-			Str(consts.LogKeyKafkaEventType, string(event.Type)).
-			Msg("error while marshalling JSON when trying to publish event")
-		return
-	}
-
-	err = service.kafkaProducer.Produce(
-		&kafka.Message{
-			TopicPartition: kafka.TopicPartition{
-				Topic:     &CompaniesEventsKafkaTopic,
-				Partition: kafka.PartitionAny,
-			},
-			Value: jsonEvent,
-		},
-		nil, // delivery channel
-	)
-	if err != nil {
-		log.Error().
-			Err(err).
-			Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
-			Str(consts.LogKeyKafkaEventType, string(event.Type)).
-			Msg("error while publishing event")
-		return
-	}
-
-	log.Info().
-		Str(consts.LogKeyTimeUTC, time.Now().UTC().String()).
-		Str(consts.LogKeyKafkaEventType, string(event.Type)).
-		Msg("published event")
 }
