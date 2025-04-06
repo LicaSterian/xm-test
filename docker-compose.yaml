@@ -1,0 +1,56 @@
+services:
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/Users/arcade/data/db
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_KRAFT_BROKER_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+  auth:
+    build:
+      context: ./auth
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+      # TODO mount via secrets file
+      - JWT_SECRET_KEY=my-jwt-secret-key
+    entrypoint:
+      ["sh", "-c", "until nc -z mongo 27017; do sleep 1; done && ./auth"]
+
+  companies:
+    build:
+      context: ./companies
+    depends_on:
+      - mongo
+      - kafka
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+      # TODO mount via secrets file
+      - JWT_SECRET_KEY=my-jwt-secret-key
+      - KAFKA_SERVERS=kafka:9092
+    entrypoint: [
+        "sh",
+        "-c",
+        "until nc -z mongo 27017; do sleep 1; done && \
+        until nc -z kafka 9092; do sleep 1; done && \
+        ./companies",
+      ]
+
+volumes:
+  mongo-data:
