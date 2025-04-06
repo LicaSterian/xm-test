@@ -1,1 +1,4 @@
 cover.out
+
+mongo-migrations/node_modules
+mongo-migrations/.env
