@@ -5,6 +5,7 @@ import (
 	"auth/handlers"
 	"auth/hasher"
 	"auth/jwt"
+	"auth/middleware"
 	"auth/repo"
 	"auth/service"
 	"context"
@@ -85,6 +86,14 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 
 	engine := gin.New()
+
+	engine.Use(gin.Recovery())
+	engine.Use(middleware.TimeoutMiddleware(5 * time.Second))
+
+	// rate limit 5 req/s with burst of 10
+	limiter := middleware.NewClientLimiter(5, 10)
+	engine.Use(middleware.RateLimitMiddleware(limiter))
+
 	engine.POST("/login", authHandler.Login)
 	engine.POST("register", authHandler.Register)
 
