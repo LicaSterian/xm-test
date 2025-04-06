@@ -1,6 +1,7 @@
 package service
 
 import (
+	"companies/eventpublisher"
 	"companies/mocks"
 	"companies/models"
 	"context"
@@ -86,7 +87,9 @@ func TestCreateCompany(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			r := new(mocks.CompanyRepo)
 
-			companyService := NewCompanyService(r, nil)
+			eventPublisher := eventpublisher.NewEventPublisher(nil)
+
+			companyService := NewCompanyService(r, eventPublisher)
 
 			testCase.stubMock(r, testCase.company)
 
@@ -178,7 +181,9 @@ func TestPatchCompany(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			r := new(mocks.CompanyRepo)
 
-			companyService := NewCompanyService(r, nil)
+			eventPublisher := eventpublisher.NewEventPublisher(nil)
+
+			companyService := NewCompanyService(r, eventPublisher)
 
 			testCase.stubMock(r, testCase.company)
 
@@ -255,7 +260,9 @@ func TestGetCompany(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			r := new(mocks.CompanyRepo)
 
-			companyService := NewCompanyService(r, nil)
+			eventPublisher := eventpublisher.NewEventPublisher(nil)
+
+			companyService := NewCompanyService(r, eventPublisher)
 
 			testCase.stubMock(r, testCase.company)
 
@@ -303,7 +310,9 @@ func TestDeleteCompany(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			r := new(mocks.CompanyRepo)
 
-			companyService := NewCompanyService(r, nil)
+			eventPublisher := eventpublisher.NewEventPublisher(nil)
+
+			companyService := NewCompanyService(r, eventPublisher)
 
 			testCase.stubMock(r)
 
